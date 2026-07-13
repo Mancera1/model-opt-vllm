@@ -1,0 +1,10 @@
+{
+  "repo": "nvidia/Qwen3.6-35B-A3B-NVFP4",
+  "tensors_scanned": 30841,
+  "expected_class_size": 30841,
+  "bytes_scanned": 2052915200,
+  "bad_tensors": [],
+  "verdict": "PASS",
+  "elapsed_s": 114.7,
+  "method": "HTTP ranged reads, dtype==F8_E4M3 & endswith .weight_scale, fail on 0x7F/0xFF/0x80-0xFE"
+}
