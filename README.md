@@ -277,6 +277,7 @@ model-opt-vllm/
 │   └── qwen36-mtp-profile.sh
 ├── handoff/                          # Validation pack: scale_scan.py + degenerate_detector.py (no GPU needed),
 │   │                                 #   parity_embedding.py, omni_audio_check.py, gen_bench.py, specdec_grid.py,
+│   │                                 #   capacity_probe.py (per-host capacity ceiling search),
 │   │                                 #   canary_repros.md, README.md (GPU/endpoint-BLOCKED — see handoff/README.md)
 │   └── results/                      # executed verification evidence
 │       └── scale_scan_result.2026-07-12.json   # NVFP4 scan: PASS, 30,841/30,841 tensors clean

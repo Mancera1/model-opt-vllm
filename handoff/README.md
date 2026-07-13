@@ -42,8 +42,9 @@ this session: `scale_scan.py` and `degenerate_detector.py`.
 | 4 | `omni_audio_check.py` | endpoint | Omni Call-type-A audio parity + degeneracy diff. |
 | 5 | `gen_bench.py` | endpoint | Qwen3.6 TTFT/TPOT/throughput at concurrency {1,4,8,16,32}. |
 | 6 | `specdec_grid.py` | GPU + vllm | Composed MTP grid: target×spec×prefix×kv×concurrency (DFlash excluded, D3). |
-| 7 | `canary_repros.md` | endpoint/GPU | The 7 open upstream issues that gate MTP, each with a repro. |
-| 8 | `README.md` | — | this file. |
+| 7 | `capacity_probe.py` | GPU + docker | Bisects a host's ceiling for `--max-num-batched-tokens` or `--gpu-memory-utilization` per model (boot + load-burst per probe). Informs per-host overrides; never edits the profiles. |
+| 8 | `canary_repros.md` | endpoint/GPU | The 7 open upstream issues that gate MTP, each with a repro. |
+| 9 | `README.md` | — | this file. |
 | — | `../quant-offline/scripts/quantize_omni_thinker_fp8.py` | GPU | FP8 W8A8 thinker-only PTQ (off-vendor path, eval-gated). |
 | — | `../quant-offline/scripts/quantize_qwen36_fallback.py` | GPU | FALLBACK Qwen3.6 self-quant (primary = NVIDIA pre-quant). |
 
@@ -121,6 +122,7 @@ Everything except steps 1 is BLOCKED (needs GPU/endpoint).
 | `omni_audio_check.py` | every item exact greedy 0-diff vs reference; 0 degenerate; `--logprobs` top-logprob max abs diff `≤ 1e-3`. **Separate gate:** audio task-eval delta `≤ 1 pt`. |
 | `gen_bench.py` | 0 request errors **and** 0 degenerate generations. Optional latency SLOs (`--ttft-slo-ms`/`--tpot-slo-ms`) OFF by default — the scope contract sets no latency number, so none is invented. |
 | `specdec_grid.py` | per cell: 0 degenerate **and** (MTP ⇒ 0-diff vs same-config no-spec baseline, `LOSSLESS_DIFF_MAX=0`) **and** no acceptance anomaly (`rate < 0.999`, `accepted < drafted`) **and** 0 errors. Whole grid must be clean to enable MTP. |
+| `capacity_probe.py` | a probe PASSes iff the server reaches `/health` **and** survives the concurrent load burst (all 200s, container alive, still healthy). Reports the highest passing value; exit 1 only if the `--lo` floor fails. **A per-host tuner, not a promotion gate** — record the ceiling, set deployment overrides deliberately, leave `configs/*` at vLLM defaults. |
 | `canary_repros.md` | none of #43559/#47194/#47087/#35288/#40756/#47930/#39928 reproduces on the intended profile. |
 | `quantize_omni_thinker_fp8.py` | export produces safetensors **and** auto `scale_scan.py --mode fp8` == PASS. Then REQUIRED: omni `≤ 1 pt` task-eval (separate, serving). |
 | `quantize_qwen36_fallback.py` | export produces safetensors **and** auto `scale_scan.py` (mode per format) == PASS. `w4a16_nvfp4`: also confirm it loads in vLLM (deploy support "in progress", B-22). |
