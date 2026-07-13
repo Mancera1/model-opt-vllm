@@ -1,0 +1,21 @@
+# =============================================================================
+# serve-unified constraints  (Variant B · single image · base vllm/vllm-openai:v0.24.0 + vllm-omni)
+# Used as:  pip install "vllm-omni @ git+...@<commit>" -c constraints.txt
+#
+# Variant B hosts ALL THREE serving models from ONE image (deployments run one container per
+# model — vLLM serves one model per process). It therefore runs the vLLM-0.24.0 engine for
+# Qwen3.6 generation + Qwen3-VL-Embedding pooling AND vllm-omni for Qwen3-Omni, trading away
+# vLLM 0.25.0's newest gen+embedding fixes (Human Amendment 2026-07-12). This constraints file
+# is IDENTICAL to variant-a/serve-omni: it FREEZES the six core packages the base already ships
+# so the vllm-omni install cannot move them (COR-8: vllm-omni has no python-level vllm/torch pin).
+#
+# Values: Matrix IMAGE 2 + vllm v0.24.0 requirements/cuda.txt (verified at tag). VERSION-ONLY
+# (constraints files carry no extras/markers).
+# =============================================================================
+
+vllm==0.24.0                      # Matrix IMAGE 2: base-image engine (serves gen + embedding + is omni's base)
+torch==2.11.0                     # 0.24.0 cuda.txt L8 (unified torch anchor across every image)
+torchvision==0.26.0               # 0.24.0 cuda.txt L10 (moves with torch)
+torchaudio==2.11.0                # 0.24.0 cuda.txt L8 (moves with torch)
+flashinfer-python==0.6.12         # 0.24.0 cuda.txt L12
+flashinfer-cubin==0.6.12          # 0.24.0 cuda.txt L13

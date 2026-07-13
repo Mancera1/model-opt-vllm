@@ -1,0 +1,22 @@
+# =============================================================================
+# serve-omni constraints  (Variant A · base vllm/vllm-openai:v0.24.0 + vllm-omni @ commit)
+# Used as:  pip install "vllm-omni @ git+...@<commit>" -c constraints.txt
+#
+# PURPOSE: FREEZE the six numerically-critical packages the base image already ships so the
+# vllm-omni install cannot silently move them. vllm-omni declares NO python-level vllm/torch/
+# flashinfer pin (COR-8, verified via pypi.org/pypi/vllm-omni/0.24.0/json this session) — only a
+# `transformers>=5.5.3` floor and pins like `accelerate==1.12.0`/`diffusers==0.38.0`. The Dockerfile
+# GUARD additionally watches transformers as a live tripwire (it is intentionally NOT frozen here,
+# per Gate-1 requirement 2's freeze list).
+#
+# Versions are VERSION-ONLY (constraints files carry no extras/markers). All six are the values
+# baked into vllm/vllm-openai:v0.24.0 per Matrix IMAGE 2 + vllm v0.24.0 requirements/cuda.txt
+# (config-blob-verified: CUDA 13.0.2 / torch 2.11.0 / flashinfer 0.6.12 inside the base).
+# =============================================================================
+
+vllm==0.24.0                      # Matrix IMAGE 2: base-image engine; freeze so no transitive omni dep bumps it
+torch==2.11.0                     # 0.24.0 cuda.txt L8 (same torch anchor as 0.25.0 — unifies all images)
+torchvision==0.26.0               # 0.24.0 cuda.txt L10 (moves with torch)
+torchaudio==2.11.0                # 0.24.0 cuda.txt L8 (moves with torch)
+flashinfer-python==0.6.12         # 0.24.0 cuda.txt L12 (0.24.0 pins .12; 0.25.0 moved to .13)
+flashinfer-cubin==0.6.12          # 0.24.0 cuda.txt L13

@@ -1,0 +1,49 @@
+# =============================================================================
+# serve-main constraints  (Variant A · vLLM 0.25.0 · CUDA 13.0.2 · torch 2.11.0 · sm90)
+# Used as:  pip install vllm==0.25.0 -c constraints.txt
+#
+# vLLM 0.25.0's published wheel requires_dist carries the ENTIRE cu13 graph (verified via
+# pypi.org/pypi/vllm/0.25.0/json this session). This file pins every ">=" floor to an EXACT
+# version so the build is reproducible. Lines are VERSION-ONLY: pip constraints files may not
+# carry extras ([cu13]) or the extra is supplied by vLLM's own requirement, not here.
+#
+# Provenance of every pin: Gate-1 "Locked Version Matrix — IMAGE 1" and vllm v0.25.0
+# requirements/cuda.txt + common.txt (both read at the tag). Resolver-derived pins were
+# resolved via `curl pypi.org/pypi/<pkg>/json` on 2026-07-12 and are noted "resolved".
+# =============================================================================
+
+# --- torch stack: vLLM 0.25.0 anchors these exactly (default PyPI wheel IS cu13) ---------
+torch==2.11.0                     # Matrix IMAGE 1 + cuda.txt L8 (nvidia-*-cu13; sm90 first-class)
+torchvision==0.26.0               # Matrix IMAGE 1 + cuda.txt L10 (must move with torch)
+torchaudio==2.11.0                # Matrix IMAGE 1 + cuda.txt L8 (must move with torch)
+
+# --- attention / kernels (FA4 cute-DSL, MLA spec-decode, quant GEMM) ---------------------
+flashinfer-python==0.6.13         # Matrix IMAGE 1 + cuda.txt L14; also baked into vLLM wheel Requires-Dist
+flashinfer-cubin==0.6.13          # cuda.txt L15; cubin baked to avoid runtime kernel downloads
+apache-tvm-ffi==0.1.9             # cuda.txt L16 (flashinfer needs !=0.1.8,<0.2,>=0.1.6; 0.1.9 satisfies)
+tilelang==0.1.9                   # cuda.txt L17
+nvidia-cutlass-dsl==4.5.2         # cuda.txt L25 (vLLM requires nvidia-cutlass-dsl[cu13]==4.5.2; anchors quack/flashinfer)
+humming-kernels==0.1.10           # cuda.txt L32 (vLLM requires humming-kernels[cu13]==0.1.10; quant GEMM; torch>=2.7 OK)
+tokenspeed-mla==0.1.2             # cuda.txt L29 (faster MLA + spec decode; Linux-only in vLLM's marker)
+
+# --- resolved: newest satisfying the vLLM floor AND co-installable with the pins above ----
+quack-kernels==0.5.0              # RESOLVED. cuda.txt floors quack-kernels>=0.3.3, but 0.5.1+ hard-require
+                                  #   cutlass-dsl==4.6.0.dev0/4.6.0, colliding with the pinned 4.5.2 above.
+                                  #   0.5.0 requires cutlass-dsl>=4.5.2 -> the newest version that keeps the
+                                  #   whole graph resolvable. Without this pin, `pip install vllm==0.25.0`
+                                  #   itself fails on the cutlass-dsl 4.5.2-vs-4.6.0 conflict. (pypi 2026-07-12)
+
+# --- media IO stack (0.25.0 added torchcodec + PyNvVideoCodec; parity-relevant numerics) --
+torchcodec==0.14.0                # RESOLVED newest satisfying cuda.txt L11 floor `torchcodec>=0.14` (pypi 2026-07-12)
+PyNvVideoCodec==2.0.4             # cuda.txt L11 (NVDEC decode; 0.25.0-only vs 0.24.0 base — parity delta)
+opencv-python-headless==4.13.0.92 # D5 parity. vLLM wheel floors opencv-python-headless>=4.13.0; pinned to the
+                                  #   newest 4.x (NOT the 5.0.0.93 major bump) to avoid an unvetted decoder change
+                                  #   on a parity-numerics path. Gate-2/prod: reconcile against prod's opencv line.
+
+# --- loaders / profiling / misc runtime deps (all in vLLM 0.25.0 wheel requires_dist) -----
+transformers==5.13.1              # Matrix IMAGE 1 (newest at lock; vLLM floors transformers>=5.5.3)
+numba==0.65.0                     # cuda.txt L4 (N-gram spec decode; vLLM wheel pins ==0.65.0)
+fastsafetensors==0.3.3            # RESOLVED newest satisfying cuda.txt L22 floor `fastsafetensors>=0.3.2` (pypi 2026-07-12)
+nvidia-cudnn-frontend==1.26.0     # RESOLVED newest satisfying cuda.txt L18 floor `nvidia-cudnn-frontend>=1.19.1`;
+                                  #   base package (no cutedsl extra) has no torch/cutlass pin -> safe (pypi 2026-07-12)
+nvtx==0.2.15                      # cuda.txt L19 (LLM_NVTX_SCOPES profiling; already exact & newest — confirmed pypi 2026-07-12)

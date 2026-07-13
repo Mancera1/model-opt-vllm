@@ -1,0 +1,19 @@
+# =============================================================================
+# quant-offline constraints  (shared by BOTH variants · ModelOpt PTQ job, NOT a serving runtime)
+# Used as:  pip install "nvidia-modelopt[hf]==0.45.0" torch==2.11.0 transformers==5.8.1 \
+#                        datasets==5.0.0 accelerate==1.14.0 -c constraints.txt
+#
+# This image runs offline quantization (mtq.quantize -> export_hf_checkpoint) whose output is
+# served back through the serving images. It is decoupled from the serving transformers line on
+# purpose: nvidia-modelopt[hf] caps transformers <5.10 (verified requires_dist:
+# `transformers<5.10,>=4.56; extra == "hf"` via pypi.org/pypi/nvidia-modelopt/0.45.0/json).
+# VERSION-ONLY (constraints carry no extras; the [hf] extra is on the install command line).
+# =============================================================================
+
+torch==2.11.0                     # Matrix IMAGE 3 (modelopt requires torch>=2.8; unifies the CUDA/torch anchor)
+nvidia-modelopt==0.45.0           # Matrix IMAGE 3 (newest; W4A16_NVFP4 first-class + router/gate exclude fix)
+transformers==5.8.1               # RESOLVED newest 5.8.x. Cap <5.10 comes from modelopt[hf] (verified above);
+                                  #   5.9.x is AVOIDED per the vllm-omni-documented loader break (Matrix IMAGE 3);
+                                  #   5.8.1 is the newest 5.8.x on PyPI 2026-07-12 (>=4.56, <5.10 -> satisfies modelopt).
+datasets==5.0.0                   # RESOLVED newest final (calibration corpus loading; pypi 2026-07-12)
+accelerate==1.14.0                # RESOLVED newest final (device_map / big-model init for PTQ; requires torch>=2.0.0; pypi 2026-07-12)
