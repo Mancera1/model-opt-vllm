@@ -1,0 +1,67 @@
+# =============================================================================
+# serve-trtllm constraints  (Variant D · TensorRT-LLM 1.2.1 · CUDA 13 lineage · torch 2.9.1+cu130 · sm90)
+# Used as:  pip install tensorrt-llm==1.2.1 -c constraints.txt \
+#             --extra-index-url https://download.pytorch.org/whl/cu130 \
+#             --extra-index-url https://pypi.nvidia.com
+#
+# *** D8(a) SCOPE — READ FIRST (Gate-3 ruling 2026-07-14) ***
+# This image is ENGINE INFRASTRUCTURE. TensorRT-LLM 1.2.1 (newest stable) can serve NONE of the
+# three hosted models: Qwen/Qwen3.6-35B-A3B (arch absent; NVFP4 artifact unparseable + sm100-only
+# NVFP4), Qwen/Qwen3-VL-Embedding-8B (no embedding serving exists in trtllm-serve), and
+# Qwen/Qwen3-Omni-30B-A3B-Instruct (arch absent). Evidence: docs/gate3-adjudication.md §1b.
+# Re-activation is governed by risk R19. There are NO configs/trtllm model profiles by design.
+#
+# D9 DEVIATIONS from the repo anchor (each ruled at Gate-3 with provenance):
+#   torch 2.9.1+cu130 (not 2.11.0)  — TRT-LLM's own window is >=2.9.1,<=2.10.0a0
+#     (requirements.txt L24 at tag v1.2.1); the +cu130 flavor comes from the extra index
+#     embedded at requirements.txt L1 (download.pytorch.org/whl/cu130) — plain-PyPI torch 2.9.1
+#     is cu12.8-lineage and MUST NOT be used here (mixed-lineage env; gate3 §2, C68/C71).
+#   transformers 4.57.3 (not 5.x)   — requirements.txt exact pin.
+#   numpy <2 (resolved 1.26.4)      — requirements.txt cap.
+# linux/amd64 + sm90 remain mandatory. Python 3.12 (NVIDIA wheels exist for cp310/cp312 only).
+#
+# Provenance: gate3-adjudication citations C58/C59/C61/C68/C71; requirements.txt read at GitHub
+# tag v1.2.1 2026-07-14; pypi metadata read 2026-07-14; RESOLVED pins from the uv resolution of
+# 2026-07-14 executed in a linux/amd64 container with BOTH extra indexes (resolved-lock.txt).
+# =============================================================================
+
+# --- engine (wheel: pypi.nvidia.com, 2.51 GB cp312 bare-linux_x86_64 tag — R17) ---
+tensorrt-llm==1.2.1               # Gate-3 D8(a). pypi.org carries a 10,133-byte wheel-stub sdist
+                                  #   whose build backend fetches this wheel from pypi.nvidia.com
+                                  #   (COR-9); the Dockerfile passes the index explicitly instead.
+
+# --- torch stack: cu130-flavored local versions (D9 deviation; index-dependent) ----------
+torch==2.9.1+cu130                # requirements.txt L24 window >=2.9.1,<=2.10.0a0; +cu130 wheel
+                                  #   verified present on download.pytorch.org/whl/cu130 (C71).
+                                  #   Couples nvidia-nccl-cu13==2.27.7 (requirements.txt L28-29).
+torchvision==0.24.1+cu130         # RESOLVED; moves with torch (cu130 index, 2026-07-14)
+torchao==0.15.0+cu130             # RESOLVED newest satisfying trtllm's >=0.14.1,<0.16.0 on the
+                                  #   cu130 index (2026-07-14)
+triton==3.5.1                     # requirements.txt exact; equals torch 2.9.1+cu130's own pin
+nvidia-nccl-cu13==2.27.7          # RESOLVED — torch 2.9.1+cu130's exact coupling; also inside
+                                  #   trtllm's >=2.27.7,<=2.28.9 window (requirements.txt L28-31)
+
+# --- TensorRT chain (meta -> tensorrt-cu13 -> bindings/libs; wheel-stub sdists, COR-9) ----
+tensorrt==10.14.1.48.post1        # RESOLVED from trtllm's tensorrt~=10.14.1 (pypi 2026-07-14)
+
+# --- engine ecosystem (exact in requirements.txt at v1.2.1 unless marked RESOLVED) --------
+transformers==4.57.3              # requirements.txt exact (4.x epoch — D9 deviation)
+flashinfer-python==0.6.4          # requirements.txt exact (vs 0.6.12/0.6.13 in the other images
+                                  #   — a documented coexistence blocker; irrelevant standalone)
+xgrammar==0.1.32                  # requirements.txt exact
+nvidia-cutlass-dsl==4.3.4         # requirements.txt exact (py>=3.10 marker upstream)
+apache-tvm-ffi==0.1.6             # requirements.txt exact
+nvidia-modelopt==0.37.0           # RESOLVED from trtllm's nvidia-modelopt[torch]~=0.37.0. NOTE:
+                                  #   below the quant image's 0.45.0 and the NVFP4 checkpoint's
+                                  #   0.44.0 producer — engine-internal only; this image hosts
+                                  #   none of the checkpoints (D8a), so no compat question arises.
+llguidance==0.7.29                # requirements.txt exact
+mistral-common==1.8.6             # requirements.txt exact
+fastapi==0.121.3                  # RESOLVED newest inside trtllm's >=0.120.1,<=0.121.3 window
+numpy==1.26.4                     # RESOLVED newest under trtllm's numpy<2 cap
+cuda-python==13.3.1               # RESOLVED from trtllm's cuda-python>=13 (cu13 lineage signal)
+mpi4py==4.1.2                     # RESOLVED from trtllm's floor; needs an MPI runtime — the
+                                  #   Dockerfile installs OpenMPI via apt
+opencv-python-headless==4.11.0.86 # RESOLVED from trtllm's floor. NOTE: older than serve-main's
+                                  #   parity-pinned 4.13.0.92 — acceptable ONLY because this image
+                                  #   hosts no parity-relevant workload (D8a).
