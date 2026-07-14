@@ -1,0 +1,206 @@
+# resolved-lock.txt — Variant C serve-sglang (sglang 0.5.15.post1 graph)
+# Generated 2026-07-14 by the orchestrator via: uv 0.11.28 pip compile
+#   --python-version 3.12 --python-platform x86_64-manylinux_2_34 --prerelease=explicit
+#   -c constraints.txt   (inputs: sglang==0.5.15.post1 + flash-attn-4==4.0.0b15 direct)
+# PROVES: the pin graph RESOLVES for linux/amd64 + py3.12 and every constraints.txt pin
+# appears here at its exact version (zero resolver drift, 24/24). Method notes (Gate-3):
+#   * platform is manylinux_2_34 (sglang publishes no _2_28 wheels — needs glibc>=2.34;
+#     Ubuntu 24.04 base = 2.39, OK);
+#   * --prerelease=explicit + flash-attn-4 named directly: allows ONLY the beta that sglang
+#     itself pins (flash-attn-4==4.0.0b15, Risk R15) while keeping pydantic/einops/etc. stable.
+# This is a metadata-level resolution, NOT an install: the canonical as-built lock is the
+# pip freeze captured at the first real image build (see README 'Gate-2 lock step').
+aiohappyeyeballs==2.7.1   # via aiohttp
+aiohttp==3.14.1           # via fsspec, sglang
+aiosignal==1.4.0          # via aiohttp
+airportsdata==20260315    # via outlines
+annotated-doc==0.0.4      # via fastapi, typer
+annotated-types==0.7.0    # via pydantic
+anthropic==0.116.0        # via sglang
+anyio==4.14.2             # via anthropic, httpx, openai, starlette, watchfiles
+apache-tvm-ffi==0.1.11    # via flash-attn-4, flashinfer-python, quack-kernels, sgl-deep-gemm, sglang, tilelang, tokenspeed-mla, xgrammar, -c variant-c/serve-sglang/constraints.txt
+asttokens==3.0.2          # via stack-data
+attrs==26.1.0             # via aiohttp, jsonschema, referencing
+blobfile==3.0.0           # via sglang
+build==1.5.1              # via sglang
+certifi==2026.6.17        # via httpcore, httpx, requests
+cffi==2.1.0               # via soundfile
+charset-normalizer==3.4.9  # via requests
+click==8.4.2              # via flashinfer-python, huggingface-hub, uvicorn
+cloudpickle==3.1.2        # via outlines, tilelang
+compressed-tensors==0.17.1  # via sglang
+cuda-bindings==13.3.1     # via cuda-python, torch
+cuda-core==1.0.1          # via cuda-python
+cuda-pathfinder==1.5.6    # via cuda-bindings, cuda-core, cuda-python
+cuda-python==13.3.1       # via nvidia-cutlass-dsl-libs-base, nvidia-cutlass-dsl-libs-cu13, sglang
+cuda-tile==1.3.0          # via flashinfer-python
+cuda-toolkit==13.0.2      # via torch
+datasets==5.0.0           # via sglang
+decorator==5.3.1          # via ipython
+dill==0.4.1               # via datasets, multiprocess
+diskcache==5.6.3          # via outlines
+distro==1.9.0             # via anthropic, openai, sglang
+docstring-parser==0.18.0  # via anthropic
+easydict==1.13            # via sglang
+einops==0.8.2             # via flash-attn-4, flashinfer-python, quack-kernels, sglang
+executing==2.2.1          # via stack-data
+fastapi==0.139.0          # via sglang
+filelock==3.29.7          # via blobfile, datasets, huggingface-hub, modelscope, modelscope-hub, torch
+flash-attn-4==4.0.0b15    # via sglang, -c variant-c/serve-sglang/constraints.txt, -r /private/tmp/claude-501/-Users-jose-workspace-model-opt-vllm/2d89cf9a-b8b4-4c35-9904-d10014b07e65/scratchpad/locks_c.in
+flashinfer-cubin==0.6.12  # via sglang, -c variant-c/serve-sglang/constraints.txt
+flashinfer-python==0.6.12  # via sglang, -c variant-c/serve-sglang/constraints.txt
+frozenlist==1.8.0         # via aiohttp, aiosignal
+fsspec==2026.4.0          # via datasets, huggingface-hub, torch
+gguf==0.19.0              # via sglang
+grpcio==1.82.1            # via grpcio-health-checking, grpcio-reflection, smg-grpc-proto, smg-grpc-servicer
+grpcio-health-checking==1.82.1  # via smg-grpc-servicer
+grpcio-reflection==1.82.1  # via smg-grpc-servicer
+h11==0.16.0               # via httpcore, uvicorn
+hf-xet==1.5.1             # via huggingface-hub
+httpcore==1.0.9           # via httpx
+httpx==0.28.1             # via anthropic, datasets, huggingface-hub, openai
+huggingface-hub==1.23.0   # via datasets, kernels, timm, tokenizers, transformers
+idna==3.18                # via anyio, httpx, requests, yarl
+interegular==0.3.3        # via outlines, outlines-core, sglang
+ipython==9.15.0           # via sglang
+ipython-pygments-lexers==1.1.1  # via ipython
+jedi==0.20.0              # via ipython
+jinja2==3.1.6             # via outlines, torch
+jiter==0.16.0             # via anthropic, openai
+jsonschema==4.26.0        # via mistral-common, outlines, outlines-core
+jsonschema-specifications==2025.9.1  # via jsonschema
+kernels==0.14.1           # via sglang, -c variant-c/serve-sglang/constraints.txt
+kernels-data==0.16.0      # via kernels
+lark==1.3.1               # via outlines
+llguidance==0.7.30        # via sglang, -c variant-c/serve-sglang/constraints.txt
+loguru==0.7.3             # via compressed-tensors
+lxml==6.1.1               # via blobfile
+markdown-it-py==4.2.0     # via rich
+markupsafe==3.0.3         # via jinja2
+matplotlib-inline==0.2.2  # via ipython
+mdurl==0.1.2              # via markdown-it-py
+mistral-common==1.11.5    # via sglang, -c variant-c/serve-sglang/constraints.txt
+ml-dtypes==0.5.4          # via tilelang
+modelscope==1.38.1        # via sglang
+modelscope-hub==0.1.7     # via modelscope
+mpmath==1.3.0             # via sympy
+msgspec==0.21.1           # via sglang
+multidict==6.7.1          # via aiohttp, yarl
+multiprocess==0.70.19     # via datasets
+nest-asyncio==1.6.0       # via outlines
+networkx==3.6.1           # via torch
+ninja==1.13.0             # via flashinfer-python, sglang
+numpy==2.3.5              # via cuda-core, datasets, flashinfer-python, gguf, mistral-common, ml-dtypes, nvidia-cutlass-dsl-libs-base, nvidia-cutlass-dsl-libs-cu13, outlines, pandas, scipy, sglang, soundfile, tilelang, torchvision, transformers, xgrammar
+nvidia-cublas==13.1.0.3   # via cuda-toolkit, nvidia-cudnn-cu13, nvidia-cusolver
+nvidia-cuda-crt==13.3.73  # via nvidia-cuda-nvcc
+nvidia-cuda-cupti==13.0.85  # via cuda-toolkit
+nvidia-cuda-nvcc==13.2.78  # via cuda-tile, nvidia-cuda-tileiras
+nvidia-cuda-nvrtc==13.0.88  # via cuda-toolkit
+nvidia-cuda-runtime==13.0.96  # via cuda-toolkit, nvidia-cuda-nvcc
+nvidia-cuda-tileiras==13.2.78  # via cuda-tile
+nvidia-cudnn-cu13==9.19.0.56  # via torch
+nvidia-cudnn-frontend==1.26.0  # via flashinfer-python
+nvidia-cufft==12.0.0.61   # via cuda-toolkit
+nvidia-cufile==1.15.1.6   # via cuda-toolkit
+nvidia-curand==10.4.0.35  # via cuda-toolkit
+nvidia-cusolver==12.0.4.66  # via cuda-toolkit
+nvidia-cusparse==12.6.3.3  # via cuda-toolkit, nvidia-cusolver
+nvidia-cusparselt-cu13==0.8.0  # via torch
+nvidia-cutlass-dsl==4.5.2  # via flash-attn-4, flashinfer-python, quack-kernels, sglang, tokenspeed-mla, -c variant-c/serve-sglang/constraints.txt
+nvidia-cutlass-dsl-libs-base==4.5.2  # via nvidia-cutlass-dsl, nvidia-cutlass-dsl-libs-cu13
+nvidia-cutlass-dsl-libs-cu13==4.5.2  # via nvidia-cutlass-dsl
+nvidia-mathdx==25.6.0     # via sglang
+nvidia-ml-py==13.610.43   # via flashinfer-python, sglang
+nvidia-nccl-cu13==2.28.9  # via torch
+nvidia-nvjitlink==13.0.88  # via cuda-toolkit, nvidia-cufft, nvidia-cusolver, nvidia-cusparse
+nvidia-nvshmem-cu13==3.4.5  # via torch
+nvidia-nvtx==13.0.85      # via cuda-toolkit
+nvidia-nvvm==13.2.78      # via cuda-tile, nvidia-cuda-nvcc, nvidia-cuda-tileiras
+openai==2.6.1             # via sglang, -c variant-c/serve-sglang/constraints.txt
+openai-harmony==0.0.4     # via sglang
+orjson==3.11.9            # via sglang
+outlines==0.1.11          # via sglang, -c variant-c/serve-sglang/constraints.txt
+outlines-core==0.1.26     # via outlines
+packaging==26.2           # via build, datasets, flashinfer-python, huggingface-hub, kernels, modelscope, sglang, transformers
+pandas==3.0.3             # via datasets
+parso==0.8.7              # via jedi
+partial-json-parser==0.2.1.1.post7  # via sglang
+pexpect==4.9.0            # via ipython
+pillow==12.3.0            # via mistral-common, sglang, torchvision
+prometheus-client==0.25.0  # via sglang
+prompt-toolkit==3.0.52    # via ipython
+propcache==0.5.2          # via aiohttp, yarl
+protobuf==7.35.1          # via grpcio-health-checking, grpcio-reflection, smg-grpc-proto
+psutil==7.2.2             # via ipython, sglang, tilelang
+ptyprocess==0.7.0         # via pexpect
+pure-eval==0.2.3          # via stack-data
+py-spy==0.4.2             # via sglang
+pyarrow==25.0.0           # via datasets
+pybase64==1.4.3           # via sglang
+pycountry==26.2.16        # via outlines, pydantic-extra-types
+pycparser==3.0            # via cffi
+pycryptodomex==3.23.0     # via blobfile
+pydantic==2.13.4          # via anthropic, compressed-tensors, fastapi, mistral-common, openai, openai-harmony, outlines, pydantic-extra-types, sglang, xgrammar
+pydantic-core==2.46.4     # via pydantic
+pydantic-extra-types==2.11.1  # via mistral-common
+pygments==2.20.0          # via ipython, ipython-pygments-lexers, rich
+pyproject-hooks==1.2.0    # via build
+python-dateutil==2.9.0.post0  # via pandas
+python-multipart==0.0.32  # via sglang
+pyyaml==6.0.3             # via datasets, gguf, huggingface-hub, kernels, timm, transformers
+pyzmq==27.1.0             # via sglang
+quack-kernels==0.5.0      # via flash-attn-4, sglang, -c variant-c/serve-sglang/constraints.txt
+referencing==0.37.0       # via jsonschema, jsonschema-specifications, outlines
+regex==2026.7.10          # via tiktoken, transformers
+requests==2.34.2          # via datasets, flashinfer-python, gguf, mistral-common, modelscope, modelscope-hub, outlines, sglang, tiktoken
+rich==15.0.0              # via typer
+rpds-py==2026.6.3         # via jsonschema, referencing
+safetensors==0.8.0        # via timm, transformers
+scipy==1.18.0             # via sglang
+sentencepiece==0.2.2      # via sglang
+setproctitle==1.3.7       # via sglang
+setuptools==81.0.0        # via modelscope, torch
+sgl-deep-gemm==0.1.4      # via sglang, -c variant-c/serve-sglang/constraints.txt
+sglang==0.5.15.post1      # via -c variant-c/serve-sglang/constraints.txt, -r /private/tmp/claude-501/-Users-jose-workspace-model-opt-vllm/2d89cf9a-b8b4-4c35-9904-d10014b07e65/scratchpad/locks_c.in
+sglang-kernel==0.4.4      # via sglang, -c variant-c/serve-sglang/constraints.txt
+shellingham==1.5.4        # via typer
+six==1.17.0               # via python-dateutil
+smg-grpc-proto==0.4.14    # via smg-grpc-servicer
+smg-grpc-servicer==0.6.0  # via sglang
+sniffio==1.3.1            # via anthropic, openai
+soundfile==0.13.1         # via sglang
+stack-data==0.6.3         # via ipython
+starlette==1.3.1          # via fastapi
+sympy==1.14.0             # via torch
+tabulate==0.10.0          # via flashinfer-python
+tiktoken==0.13.0          # via mistral-common, sglang
+tilelang==0.1.11          # via sglang, -c variant-c/serve-sglang/constraints.txt
+timm==1.0.16              # via sglang
+tokenizers==0.22.2        # via transformers
+tokenspeed-mla==0.1.7     # via sglang, -c variant-c/serve-sglang/constraints.txt
+tokenspeed-triton==3.8.10.post20260709  # via tokenspeed-mla
+tomlkit==0.15.0           # via kernels
+torch==2.11.0             # via compressed-tensors, flash-attn-4, flashinfer-python, outlines, quack-kernels, sglang, tilelang, timm, tokenspeed-mla, torch-c-dlpack-ext, torchvision, xgrammar, -c variant-c/serve-sglang/constraints.txt
+torch-c-dlpack-ext==0.1.5  # via flash-attn-4, quack-kernels, tilelang
+torch-memory-saver==0.0.9.post1  # via sglang, -c variant-c/serve-sglang/constraints.txt
+torchao==0.17.0           # via sglang, -c variant-c/serve-sglang/constraints.txt
+torchaudio==2.11.0        # via sglang, -c variant-c/serve-sglang/constraints.txt
+torchcodec==0.11.1        # via sglang, -c variant-c/serve-sglang/constraints.txt
+torchvision==0.26.0       # via sglang, timm, -c variant-c/serve-sglang/constraints.txt
+tqdm==4.68.4              # via datasets, flashinfer-python, gguf, huggingface-hub, modelscope, modelscope-hub, openai, outlines, sglang, tilelang, transformers
+traitlets==5.15.1         # via ipython, matplotlib-inline
+transformers==5.12.1      # via compressed-tensors, sglang, xgrammar, -c variant-c/serve-sglang/constraints.txt
+triton==3.6.0             # via torch, xgrammar
+typer==0.26.8             # via transformers
+typing-extensions==4.16.0  # via aiohttp, aiosignal, anthropic, anyio, apache-tvm-ffi, cuda-tile, fastapi, flash-attn-4, grpcio, huggingface-hub, mistral-common, nvidia-cutlass-dsl-libs-base, nvidia-cutlass-dsl-libs-cu13, openai, outlines, pydantic, pydantic-core, pydantic-extra-types, referencing, starlette, tilelang, torch, typing-inspection, xgrammar
+typing-inspection==0.4.2  # via fastapi, pydantic
+urllib3==2.7.0            # via blobfile, modelscope, modelscope-hub, requests
+uvicorn==0.51.0           # via sglang
+uvloop==0.22.1            # via sglang
+watchfiles==1.2.0         # via sglang
+wcwidth==0.8.2            # via prompt-toolkit
+xgrammar==0.2.1           # via sglang, -c variant-c/serve-sglang/constraints.txt
+xxhash==3.8.1             # via datasets
+yarl==1.24.2              # via aiohttp
+z3-solver==4.15.4.0       # via tilelang
+zstandard==0.25.0         # via sglang

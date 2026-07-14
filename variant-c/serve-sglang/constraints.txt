@@ -1,0 +1,68 @@
+# =============================================================================
+# serve-sglang constraints  (Variant C · SGLang 0.5.15.post1 · CUDA 13.0.2 · torch 2.11.0 · sm90)
+# Used as:  pip install sglang==0.5.15.post1 flash-attn-4==4.0.0b15 -c constraints.txt
+#
+# SGLang publishes its stack as EXACT pins in its own wheel metadata (unlike vLLM's ">=" floors),
+# so most lines below restate sglang's requires_dist for audit/guard purposes; the RESOLVED lines
+# freeze the few surfaces sglang leaves ranged. Lines are VERSION-ONLY: pip constraints files may
+# not carry extras — the [cu13] extras on flashinfer/cutlass-dsl are supplied by sglang's own
+# requirement, not here.
+#
+# Provenance of every pin: Gate-3 adjudication (docs/gate3-adjudication.md, rulings D6/D9;
+# citations C31/C32/C34), sglang v0.5.15.post1 python/pyproject.toml read at the tag, pypi
+# requires_dist read 2026-07-14, and the uv resolution of 2026-07-14 (resolved-lock.txt beside
+# this file; method: --prerelease=explicit, x86_64-manylinux_2_34 — sglang ships no _2_28 wheels).
+# =============================================================================
+
+# --- engine ------------------------------------------------------------------
+sglang==0.5.15.post1              # Gate-3 D6. Floor forced by the NVFP4 artifact: W4A16_NVFP4
+                                  #   handling first lands at 0.5.15 (grep: 0 hits @v0.5.14,
+                                  #   4 @v0.5.15 — gate3-adjudication C21); .post1 = newest.
+
+# --- torch stack: sglang pins these exactly; identical to the repo anchor ----
+torch==2.11.0                     # sglang requires_dist (== the Gate-1 anchor; default PyPI wheel IS cu13, O-24)
+torchaudio==2.11.0                # sglang requires_dist (must move with torch)
+torchvision==0.26.0               # RESOLVED: sglang leaves torchvision unpinned; 0.26.0 is the
+                                  #   newest satisfying and equals the vLLM-anchor torchvision
+                                  #   (cuda.txt L10 at vllm v0.25.0). (uv lock 2026-07-14)
+
+# --- sglang kernel + attention stack (all exact in sglang requires_dist) -----
+sglang-kernel==0.4.4              # sglang requires_dist. RENAMED package (COR-10): legacy
+                                  #   'sgl-kernel' on pypi is stale at 0.3.21; this is the real
+                                  #   615 MB cu13 kernel wheel (cp310-abi3, dep-free).
+flashinfer-python==0.6.12         # sglang requires_dist (pyproject: "keep it aligned with
+                                  #   jit-cache version in Dockerfile"); [cu13] extra via sglang
+flashinfer-cubin==0.6.12          # sglang requires_dist; cubins baked, no runtime kernel downloads
+flash-attn-4==4.0.0b15            # sglang requires_dist — a BETA pin inside a stable release
+                                  #   (Risk R15). Lock tooling needs prerelease allowance for
+                                  #   exactly this pin (uv: direct requirement + --prerelease=explicit).
+nvidia-cutlass-dsl==4.5.2         # sglang requires_dist [cu13] (same version vLLM 0.25.0 pins)
+sgl-deep-gemm==0.1.4              # sglang requires_dist
+tilelang==0.1.11                  # sglang requires_dist
+tokenspeed-mla==0.1.7             # sglang requires_dist (NOTE: 0.1.7 here vs vLLM 0.25.0's 0.1.2
+                                  #   in serve-main — engine-local difference, images are separate)
+apache-tvm-ffi==0.1.11            # sglang requires_dist (vs vLLM's 0.1.9 — a documented
+                                  #   coexistence blocker, gate3-adjudication §5; irrelevant standalone)
+quack-kernels==0.5.0              # RESOLVED newest satisfying sglang's floor >=0.4.1 that keeps
+                                  #   cutlass-dsl==4.5.2 resolvable: quack 0.5.1+ hard-require
+                                  #   cutlass-dsl 4.6.x. Same load-bearing story as serve-main.
+                                  #   (uv lock 2026-07-14)
+
+# --- serving / tokenizer / mm stack ------------------------------------------
+transformers==5.12.1              # sglang requires_dist (vllm-family floor >=5.5.3 satisfied;
+                                  #   differs from serve-main's 5.13.1 — images are separate)
+torchao==0.17.0                   # sglang requires_dist
+xgrammar==0.2.1                   # sglang requires_dist
+torchcodec==0.11.1                # sglang requires_dist (pyproject comment: "torchcodec 0.11.1
+                                  #   for torch 2.11.x" — NOTE serve-main locks 0.14.0 on the
+                                  #   same torch per vLLM's >=0.14 floor; engine-local pin,
+                                  #   separate images, no conflict in practice)
+openai==2.6.1                     # sglang requires_dist (exact — pins the in-env openai client)
+outlines==0.1.11                  # sglang requires_dist (transitively pins outlines-core==0.1.26)
+llguidance==0.7.30                # RESOLVED newest satisfying sglang's >=0.7.11,<0.8.0
+                                  #   (uv lock 2026-07-14)
+mistral-common==1.11.5            # RESOLVED at sglang's floor >=1.11.5 (uv lock 2026-07-14)
+kernels==0.14.1                   # RESOLVED newest satisfying sglang's >=0.14.1,<0.15 — the HF
+                                  #   kernel downloader that fetches kernels-community/sgl-flash-attn3
+                                  #   at first use; the Dockerfile PRE-BAKES that snapshot (Risk R14)
+torch-memory-saver==0.0.9.post1   # RESOLVED at sglang's floor >=0.0.9.post1 (uv lock 2026-07-14)
