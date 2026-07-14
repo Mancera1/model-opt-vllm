@@ -3,12 +3,20 @@
 Reproducible Docker images that replace the legacy "base image + post-hoc upgrade script"
 pattern with the **newest mutually compatible** vLLM serving stack for **NVIDIA Hopper (sm90,
 H100/H200)**. Two serving **topology variants** are built side-by-side (Human Amendment,
-2026-07-12) plus one shared offline-quantization image.
+2026-07-12) plus one shared offline-quantization image. The **Gate-3 cycle (ruled 2026-07-14,
+`docs/gate3-adjudication.md`)** adds two engine standalones: **variant-c/serve-sglang** (SGLang
+0.5.15.post1 — hosts all three models) and **variant-d/serve-trtllm** (TensorRT-LLM 1.2.1 —
+**engine infrastructure only**: it can serve *none* of the three hosted models; ruling D8(a)).
+A single-environment coexistence image was **proven impossible** at every version level and is
+not built (ruling D7; evidence in the adjudication doc §5).
 
 **Anchor (every image):** `linux/amd64` · Python 3.12 · CUDA 13.0.2 lineage · `torch==2.11.0`
 (the default PyPI wheel is cu13) · sm90 first-class · **NVIDIA driver must be in one of the
 enumerated branches 535 / 550 / 565 / 570 / 575** (the images' `NVIDIA_REQUIRE_CUDA` lists those
 branches exactly — a 545.x or 560.x driver fails; Risk R10, see `docs/migration-notes.md`).
+*Gate-3 exception (ruling D9):* `serve-sglang` keeps this anchor exactly; `serve-trtllm`
+deviates by engine necessity to **torch 2.9.1+cu130** (TensorRT-LLM's own window) on the same
+CUDA-13 lineage and base image — per-image driver notes in `docs/gate3-adjudication.md` §2.
 
 **Provenance.** Pins are locked from the Gate-1 adjudications (`Matrix IMAGE 1/2/3`, decisions
 D1–D5, corrections COR-1…8), from vLLM `requirements/{cuda,common}.txt` read at tags **v0.25.0**
@@ -27,6 +35,8 @@ run. No `:latest` tags anywhere; **no runtime pip** (all installs happen at buil
 | `variant-a/serve-omni` | `model-opt-vllm/serve-omni:vllm-omni-0.24.1` | `vllm/vllm-openai:v0.24.0` | vLLM 0.24.0 + **vllm-omni**@`b9e9d23` | Qwen3-Omni-30B-A3B-Instruct |
 | `variant-b/serve-unified` | `model-opt-vllm/serve-unified:vllm-0.24.0-omni` | `vllm/vllm-openai:v0.24.0` | vLLM 0.24.0 + **vllm-omni**@`b9e9d23` | **all three** (one container per model) |
 | `quant-offline` | `model-opt-vllm/quant-offline:modelopt-0.45.0` | `nvidia/cuda:13.0.2-devel-ubuntu24.04` | **nvidia-modelopt[hf] 0.45.0** | ModelOpt PTQ job (shared by both variants) |
+| `variant-c/serve-sglang` | `model-opt-vllm/serve-sglang:sglang-0.5.15.post1` | `nvidia/cuda:13.0.2-devel-ubuntu24.04` | **SGLang 0.5.15.post1** (torch 2.11.0 anchor) | **all three** (one container per model) — incl. the NVFP4 artifact (Marlin on sm90) |
+| `variant-d/serve-trtllm` | `model-opt-vllm/serve-trtllm:trtllm-1.2.1` | `nvidia/cuda:13.0.2-devel-ubuntu24.04` | **TensorRT-LLM 1.2.1** (PyTorch backend; torch 2.9.1+cu130, D9) | **NONE — engine infrastructure (D8a)**: all three hosted models are explicit exclusions (manifest + `handoff/trtllm_smoke.md`) |
 
 `quant-offline` is shared by both variants. Training (`verl`/Ray) is **out** of this deliverable:
 verl v0.8.0 ships its own maintained image (`verlai/verl:vllm020.latest`) on the same
@@ -69,6 +79,20 @@ docker build --platform linux/amd64 \
   -t model-opt-vllm/quant-offline:modelopt-0.45.0 \
   quant-offline
 
+# --- Variant C / serve-sglang  (SGLang 0.5.15.post1; Gate-3 D6) ---
+docker build --platform linux/amd64 \
+  --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  -t model-opt-vllm/serve-sglang:sglang-0.5.15.post1 \
+  variant-c/serve-sglang
+
+# --- Variant D / serve-trtllm  (TensorRT-LLM 1.2.1 infrastructure; Gate-3 D8a) ---
+# Uses TWO additional build-time indexes (mirror-hookable build-args, no credentials):
+#   PYTORCH_CU130_INDEX_URL (torch 2.9.1+cu130) and NVIDIA_PYPI_INDEX_URL (the trtllm wheel).
+docker build --platform linux/amd64 \
+  --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  -t model-opt-vllm/serve-trtllm:trtllm-1.2.1 \
+  variant-d/serve-trtllm
+
 # Prod mirror (no creds in the URL): add to any build above:
 #   --build-arg PIP_INDEX_URL=https://<your-mirror>/simple
 ```
@@ -101,6 +125,19 @@ docker build --platform linux/amd64 \
 | Ops surface | more images, freshest engine | one image, simpler rollout |
 | Best when | you want the newest 0.25.0 gen/embedding path | you want a single unified image and can accept the 0.24.0 delta |
 
+### Engine trade-off (Gate-3 additions, ruled 2026-07-14)
+
+| Dimension | vLLM (A/B, as shipped) | **SGLang (variant-c)** | **TensorRT-LLM (variant-d)** |
+|---|---|---|---|
+| Hosted models | all three | **all three** (code-verified at the tag; runtime BLOCKED like everything else) | **none** — infrastructure only (D8a; re-activation per R19) |
+| torch / CUDA | 2.11.0 / 13.0.2 (anchor) | 2.11.0 / 13.0.2 (**anchor held**, D9) | **2.9.1+cu130** / 13.x (D9 deviation; needs the pytorch cu130 + pypi.nvidia.com build indexes) |
+| NVFP4 artifact on sm90 | `modelopt_mixed` via Marlin (D2) | `modelopt_mixed` via Marlin, floor 0.5.15 | unparseable + sm100-gated — excluded |
+| Embedding runner | `--runner pooling` (D5) | `--is-embedding`; pooler LAST+normalize in-model; **chat-template caveat** (gate3 §1a) | none exists in trtllm-serve |
+| Omni audio | vllm-omni `--omni` | native arch; **`audio_url` shape only** (OpenAI `input_audio` not accepted — client shim) | arch absent |
+| Spec decode (MTP head) | `{"method":"mtp"}`, prefix cache force-off (D3/R3) | EAGLE alias on native head; radix stays on (**canary-gated** — vLLM bug numbers don't transfer) | MTP is DeepSeek-only |
+| FP8 KV on BF16 target | `--calculate-kv-scales` | **no calibration flag — ships OFF (R21)**; NVFP4 target unaffected | pytorch backend only; moot (no models) |
+| Coexistence with the others | one env per engine — **single-env coexistence proven impossible** (D7; gate3 §5: llguidance/torch/outlines_core walls, 8 executed CONFLICT probes) | same | same |
+
 **PARITY CAVEAT (binding, Human Amendment 2026-07-12).** vLLM **0.24.0 ships no
 torchcodec/PyNvVideoCodec** (OpenCV `>=4.13.0` only); **0.25.0 added `torchcodec>=0.14` +
 `PyNvVideoCodec==2.0.4`** (both verified at the tags). Server-side **video-file** decode is
@@ -128,6 +165,22 @@ BLOCKED-protocol GPU preflight and the **load-bearing parity/decision pins baked
 **Default generation posture (D3):** `qwen36-default.sh` — prefix caching **ON**, spec decode
 **OFF**. MTP is the *tested candidate*, shipped as an explicit opt-in profile, enabled only after
 the composed benchmark grid passes on sm90.
+
+**SGLang profiles (Gate-3 D6)** live in `configs/sglang/*.sh` — engine-specific launchers (the
+`sglang serve` CLI differs from `vllm serve`; the `IMAGE` env-var swap works within an engine
+family only). Container port is sglang's native 30000; host `PORT` defaults are staggered
+(30000–30003) so vLLM and SGLang can serve side-by-side for A/B:
+
+| Model | Profile | Key posture / caveats |
+|---|---|---|
+| Qwen3.6-35B-A3B (BF16) | `sglang/qwen36-default.sh` | radix cache ON (engine default); **no fp8 KV (R21)**; spec decode OFF |
+| Qwen3.6-35B-A3B-NVFP4 | `sglang/qwen36-nvfp4.sh` | `modelopt_mixed` auto-detect; Marlin on sm90; kv `fp8_e4m3` (checkpoint scales); **PROMOTION-GATED** (R2 scan on your own copy) |
+| Qwen3-VL-Embedding-8B | `sglang/embedding-pooling.sh` | `--is-embedding`; pooler LAST+normalize in-model; **chat-template unset — GPU-gate item**; D5/R8 parity gate before cutover |
+| Qwen3-Omni-30B-A3B-Instruct | `sglang/omni-audio.sh` | thinker-only; audio via sglang `audio_url` (**OpenAI `input_audio` not accepted** — client shim) |
+| Qwen3.6-35B-A3B (MTP) | `sglang/qwen36-mtp-profile.sh` | EAGLE on native MTP head, explicit draft path; radix at engine default; **BENCHMARK+CANARY-GATED (D3)** |
+
+There are **no `configs/trtllm/` profiles** — ruling D8(a): variant-d hosts none of the three
+models; see `handoff/trtllm_smoke.md` for what it *is* for.
 
 **Example launches** (on a Hopper host with the NVIDIA Container Toolkit):
 
@@ -206,6 +259,14 @@ mkdir -p "$HF_HOME"
 - **Internal 4-segment wheels** (`torch 2.9.1.7+cu130`, `flash_attn 2.8.3.1+cu130`, … on the
   unreachable private index) may carry internal patches (Risk R7). Prod cutover requires a
   wheel-diff reconciliation — a migration note, not solved here.
+- **serve-sglang (Gate-3):** lock tooling must allow the one beta sglang itself pins
+  (`flash-attn-4==4.0.0b15` — uv: name it directly + `--prerelease=explicit`; R15). The
+  `sgl-flash-attn3` HF kernel is **pre-baked at build** and seeded into the mounted HF cache by
+  the entrypoint (R14) — no runtime downloads. sglang wheels are `manylinux_2_34` (glibc ≥2.34).
+- **serve-trtllm (Gate-3):** lock generation is **linux-only** (the `tensorrt` wheel-stub sdists
+  hard-fail on macOS); resolution/install require the two extra indexes, and the build asserts
+  `torch==2.9.1+cu130` with **zero cu12-lineage packages** (a pypi-only install silently lands
+  cu12.8 torch — R18-adjacent trap, rejected at build).
 
 ---
 
@@ -219,6 +280,18 @@ mkdir -p "$HF_HOME"
 | Pin-graph resolvability, all four images (linux/amd64 · py3.12) | **PASS — executed** via `uv pip compile --python-platform x86_64-manylinux_2_28`; every `constraints.txt` pin lands at its exact version (zero resolver drift); cu13 lineage present; the vllm-omni commit **co-resolves with the frozen vLLM 0.24.0 core without moving it** | `*/resolved-lock.txt` next to each Dockerfile |
 | Docker image builds + in-image `pip check`/freeze/import matrix, negative-index test | **PENDING** — blocked in the authoring environment (Docker VM disk); run the §2 build commands on any linux/amd64 host (or after raising Docker Desktop's disk to ≥160 GB) | this section, below |
 | GPU runtime validation (parity, benchmarks, MTP grid, canaries) | **BLOCKED — needs sm90** | `handoff/README.md` |
+
+**Gate-3 cycle (executed 2026-07-14, by the orchestrator):**
+
+| Check | Result | Evidence |
+|---|---|---|
+| Gate-3 feasibility research (engine×model matrix, version sets, lever map, backend inputs) | **RULED 2026-07-14** — 5-agent fleet + ~30 orchestrator tag-reads + 2-checker fact-check (no headline claim refuted) | `docs/gate3-adjudication.md` |
+| Single-env coexistence (vllm+omni+sglang+tensorrt_llm, one Python env) | **IMPOSSIBLE — executed**: 8 uv CONFLICT probes incl. both best-ever pairs + exhaustive pin walks (llguidance / torch / outlines_core structural walls) → **no variant-e** (D7) | `docs/gate3-adjudication.md` §5 + Appendix B |
+| Pin-graph resolvability, variant-c (linux/amd64 · py3.12 · manylinux_2_34) | **PASS — executed** via `uv pip compile --prerelease=explicit`; 194 pins; **zero drift 24/24** constraints | `variant-c/serve-sglang/resolved-lock.txt` |
+| Pin-graph resolvability, variant-d (linux/amd64 · py3.12; cu130 + nvidia indexes) | **PASS — executed in a linux/amd64 container**; 177 pins; **zero drift 20/20**; single cu13 lineage (`torch==2.9.1+cu130`, zero cu12 packages) | `variant-d/serve-trtllm/resolved-lock.txt` |
+| variant-c / variant-d image builds + in-image assertion matrices | **PENDING** — same environment limitation as above; §2 commands are complete | this section |
+| SGLang GPU items (per-profile smoke, embedding chat-template, MTP canaries re-run, R20/R21) | **BLOCKED — needs sm90** | `configs/sglang/*.sh` headers |
+| TRT-LLM smoke + R19 re-activation checklist | **BLOCKED — needs linux builder / sm90** (image hosts none of the three models by ruling) | `handoff/trtllm_smoke.md` |
 
 ### Post-build freeze (the committed lock)
 
@@ -269,16 +342,25 @@ model-opt-vllm/
 │   └── scripts/                       # volume-mounted at runtime (never COPY'd)
 │       ├── quantize_omni_thinker_fp8.py    # FP8 W8A8 thinker-only (off-vendor-path, eval-gated)
 │       └── quantize_qwen36_fallback.py     # fallback only — primary is the NVIDIA pre-quant
+├── variant-c/                        # Gate-3 (D6): SGLang standalone
+│   └── serve-sglang/{Dockerfile,constraints.txt,resolved-lock.txt}  # sglang 0.5.15.post1 (all 3 models)
+├── variant-d/                        # Gate-3 (D8a): TRT-LLM engine infrastructure
+│   └── serve-trtllm/{Dockerfile,constraints.txt,resolved-lock.txt}  # trtllm 1.2.1 — hosts NONE of the 3 (exclusions in manifest)
 ├── configs/                          # serve profiles (IMAGE selected via env)
 │   ├── embedding-pooling.sh
 │   ├── omni-audio.sh
 │   ├── qwen36-default.sh
 │   ├── qwen36-nvfp4.sh
-│   └── qwen36-mtp-profile.sh
+│   ├── qwen36-mtp-profile.sh
+│   └── sglang/                       # Gate-3 (D6): SGLang launchers (engine-specific CLI; port 30000)
+│       ├── qwen36-default.sh · qwen36-nvfp4.sh · embedding-pooling.sh
+│       └── omni-audio.sh · qwen36-mtp-profile.sh
+│                                     # NO configs/trtllm/ — ruling D8(a): variant-d hosts no models
 ├── handoff/                          # Validation pack: scale_scan.py + degenerate_detector.py (no GPU needed),
 │   │                                 #   parity_embedding.py, omni_audio_check.py, gen_bench.py, specdec_grid.py,
 │   │                                 #   capacity_probe.py (per-host capacity ceiling search),
-│   │                                 #   canary_repros.md, README.md (GPU/endpoint-BLOCKED — see handoff/README.md)
+│   │                                 #   canary_repros.md, trtllm_smoke.md (Gate-3: variant-d BLOCKED runbook + R19),
+│   │                                 #   README.md (GPU/endpoint-BLOCKED — see handoff/README.md)
 │   └── results/                      # executed verification evidence
 │       └── scale_scan_result.2026-07-12.json   # NVFP4 scan: PASS, 30,841/30,841 tensors clean
 └── docs/                             # executive-summary · design-decisions · migration-notes ·
@@ -296,5 +378,6 @@ in-image `pip freeze` captured above.
 | `docs/executive-summary.md` | ≤1 page: what got newer, what got faster (honestly), what we deliberately did not do |
 | `docs/design-decisions.md` | Locked Version Matrix, rulings D1–D5, full rejection log, corrections COR-1…8 |
 | `docs/migration-notes.md` | From the legacy image: flash-attn/ray/verl dispositions, driver branches, internal-wheel reconciliation, parity procedure, behavior deltas, rollout order |
-| `docs/risk-register.md` | R1–R13 with current status (R2 closed-pass) + acknowledged residuals |
-| `docs/claim-ledger.md` | Complete evidence trail: 37 orchestrator-executed verifications + 81 agent claims with dispositions |
+| `docs/risk-register.md` | R1–R13 with current status (R2 closed-pass) + acknowledged residuals; Gate-3 additions R14–R21 |
+| `docs/claim-ledger.md` | Complete evidence trail: 37 orchestrator-executed verifications + 81 agent claims with dispositions; Gate-3 execution rows (§8) |
+| `docs/gate3-adjudication.md` | **Gate-3 (RULED 2026-07-14)**: engine×model×capability matrix (SGLang / TRT-LLM), candidate version sets, lever map, TRT-LLM backend decision, coexistence impossibility evidence (11 uv probes), rulings D6–D9 + COR-9…13 + R14–R21 |
