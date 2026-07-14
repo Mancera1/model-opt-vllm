@@ -166,3 +166,29 @@ Handoff-author documented open items (in-script, not fabricated): embeddings req
 - **COR-4**: DFlash card peaks at 3.61x@conc1 on B200 (not "5–6x"); zero sm90 numbers exist.
 - **COR-5**: verl setup.py `torch==2.9.1` is sglang-extra-only; the vllm path runs torch 2.11.0/cu130.
 - Full correction set (COR-1…COR-8) in docs/design-decisions.md.
+
+## 8. Gate-3 cycle — orchestrator-executed verifications (2026-07-14)
+
+Method + full citation set (C1–C86) live in `docs/gate3-adjudication.md`; the rows below are the
+ledger entries for what was EXECUTED this cycle (same pedigree standard as §1). Fleet: 5
+schema-forced research agents (all canaries matched; 0 errors) + 2 adversarial fact-checkers on
+the artifact (54 citation re-checks; no headline claim refuted; 9 minor findings fixed and
+re-inspected).
+
+| id | claim | evidence (executed) |
+|----|-------|---------------------|
+| O-38 | pypi latest 2026-07-14: sglang 0.5.15.post1 (torch==2.11.0, flashinfer[cu13]==0.6.12, transformers==5.12.1, sglang-kernel==0.4.4, flash-attn-4==4.0.0b15); tensorrt-llm 1.2.1 (torch>=2.9.1,<=2.10.0a0, transformers==4.57.3, flashinfer==0.6.4) | pypi JSON walks (executed curl; gate3 C31/C59/C84/C85) |
+| O-39 | sglang v0.5.15.post1 registers Qwen3_5MoeForConditionalGeneration (+MTP arch), Qwen3OmniMoeForConditionalGeneration (audio encoder, talker off), Qwen3VLForConditionalGeneration with Pooler(LAST, normalize=True) | raw model files read at the tag (executed; gate3 C1–C10) |
+| O-40 | sglang consumes the ModelOpt MIXED_PRECISION export on sm90: `modelopt_mixed` auto-detect; W4A16_NVFP4→Marlin A16 methods; FP4 min_capability 80; MoE Marlin fallback for cap∈[8.0,10.0); FP8-KV scales load path | modelopt_quant.py + model_config.py read at tag (executed; gate3 C14–C19) |
+| O-41 | NVFP4-artifact floor is sglang 0.5.15: grep W4A16_NVFP4 = 0 @v0.5.14, 4 @v0.5.15 | dual-tag grep (executed; gate3 C21) |
+| O-42 | sglang flag surface at tag: kv dtypes {auto,fp8_e5m2,fp8_e4m3,bf16,fp4_e2m1}; NO --calculate-kv-scales (0 hits); spec algos EAGLE/EAGLE3/NEXTN/STANDALONE/NGRAM/DFLASH; --is-embedding; radix default ON; mamba radix archs include our arch | server_args.py + overrides.py reads (executed; gate3 C22–C27) |
+| O-43 | TRT-LLM 1.2.1 registers NO qwen3_5/omni arch; W4A16_NVFP4 absent from QuantAlgo enum; NVFP4 GEMM MIN_SM_VERSION=100 (CuteDSL [100,103]); Hopper matrix row NVFP4="."; trtllm-serve route set has NO /v1/embeddings; "MTP is currently only supported by Deepseek." | registry listings + mode.py + torch_custom_ops.py + openai_server.py + docs read at tag (executed; gate3 C41–C51) |
+| O-44 | TRT-LLM 1.3.0rc adds Qwen3_5 as *ForCausalLM-only thin wrappers (rc15 file = 76 lines; exclude-normalizer drops visual*/mtp.*); routing is strict architectures[0] → ConditionalGeneration unrouted (R16) | modeling_qwen3_5.py + modeling_auto.py read at rc tags (executed; gate3 C66/C67) |
+| O-45 | Single-env coexistence IMPOSSIBLE: 8 uv CONFLICT probes (P1/P2/P4–P9 incl. best-ever pairs vllm0.20.2×sglang0.5.11 and vllm0.19.1×trtllm-rc13 — both die on llguidance) + independent marker-evaluated pin-intersection sweep; two instruments, zero disagreements | uv 0.11.28 runs + compare script (EXECUTED; gate3 §5a + Appendix B; probe stderr preserved) |
+| O-46 | Structural coexistence walls: llguidance disjoint vllm(≥1.3)-vs-sglang(<0.8) at every release; no trtllm ever admits torch 2.11.0 (ceiling 2.11.0a0 at rc20); outlines==0.1.11→outlines_core==0.1.26 vs vllm's ==0.2.14; mistral-common; fastapi windows disjoint | pin walks + outlines metadata read (executed; gate3 C81–C86) |
+| O-47 | variant-c lock RESOLVES: 194 pins, zero drift 24/24 constraints (py3.12, manylinux_2_34, --prerelease=explicit with flash-attn-4 named directly — pydantic/einops stay stable) | uv pip compile (EXECUTED) → variant-c/serve-sglang/resolved-lock.txt |
+| O-48 | variant-d lock RESOLVES with correct flavor: 177 pins, zero drift 20/20; torch==2.9.1+cu130 with SINGLE cu13 lineage (nccl-cu13==2.27.7 = torch's documented coupling; zero -cu12 packages); executed in linux/amd64 container (tensorrt wheel-stub sdists hard-fail on macOS) | containerized uv pip compile ×2 (EXECUTED) → variant-d/serve-trtllm/resolved-lock.txt |
+| O-49 | pypi-only trtllm resolution lands cu12.8-lineage torch (wrong flavor — rejected by the variant-d build assert); trtllm 1.3.0rc15 is unsatisfiable even alone from pypi.org+pypi.nvidia.com (cuda-python>=13 vs torch 2.10's cuda-bindings==12.9.4) | uv runs (EXECUTED; gate3 C68/C69) |
+| O-50 | torch 2.9.1+cu130 wheel EXISTS on download.pytorch.org/whl/cu130 (index carries 2.9.0→2.13.0 +cu130, PEP 658 metadata present); first negative grep was a shell-quoting instrument error caught by a second instrument | index fetch ×2 (EXECUTED; gate3 C71) |
+| O-51 | sglang standalone needs prerelease allowance ONLY for flash-attn-4==4.0.0b15 (no-flag run fails on exactly that pin; failure artifact preserved: probes/s_alone_noprerelease.err.txt) | uv runs (EXECUTED; gate3 Appendix B S-alone) |
+| O-52 | Artifact fact-check: 54 citation re-checks by 2 adversarial checkers — every headline quote character-consistent at the tags; findings limited to 4 locator/coverage minors + 5 consistency minors/nits, all fixed and fixer-lines re-inspected | fact-check workflow wf_1244affb-c39 (EXECUTED) |

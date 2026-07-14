@@ -45,3 +45,22 @@ code-verified). Risk register: `docs/risk-register.md`.
 **Bottom line.** The modernization is designed, pinned, adversarially reviewed, and integrity-checked
 end-to-end; the two things that could not be honest here — performance numbers and index parity — are
 packaged as executable gates rather than claims.
+
+---
+
+**Gate-3 cycle (added 2026-07-14) — what got added, and what it cannot do yet.** Two engine
+standalones joined the family. **serve-sglang** (SGLang 0.5.15.post1, on the unchanged
+torch-2.11.0/CUDA-13.0.2 anchor) covers *all three* hosted models plus the NVFP4 checkpoint —
+every support claim is code-read at the tag, its 194-pin lock resolves with zero drift, and five
+launch profiles mirror the vLLM set; what it cannot do yet: serve a single request (no GPU —
+smoke, the embedding chat-template question, MTP canaries, and all parity gates are BLOCKED on
+sm90, and the image build itself is PENDING on a linux/amd64 builder). **serve-trtllm**
+(TensorRT-LLM 1.2.1) ships deliberately as *engine infrastructure that hosts none of the three
+models* — the newest stable lacks the Qwen3.6/Omni architectures, cannot parse the NVFP4 export,
+and has no embedding serving at all; the image exists as a pinned on-ramp (177-pin
+single-cu13-lineage lock, torch 2.9.1+cu130 by ruled deviation) with a loud exclusions manifest
+and a re-activation checklist for the day upstream catches up. The originally requested
+**coexistence image was not built because it cannot exist**: resolver-executed evidence shows no
+two of {vllm, sglang, tensorrt_llm} co-resolve in one Python environment at *any* version level
+(llguidance alone is disjoint between vLLM and sglang across their entire release histories) —
+the impossibility proof, not a workaround, is the deliverable (`docs/gate3-adjudication.md` §5).

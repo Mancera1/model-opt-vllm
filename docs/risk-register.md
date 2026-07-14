@@ -21,3 +21,16 @@ table's transfer to the Hopper W4A16 path), B-21 (vllm-omni raw-W4A4 on Hopper �
 BF16), C-13 (MTP+FP8 stability at 0.25.0 — canary #40756), C-21 (fp8-KV-recovers-accuracy,
 single-reporter — grid axis), D-17 (FA3 on cu13 — see R4), D-18 (modelopt fp8_cast KV-scale loading —
 moot for the pre-quant). Full dispositions: `docs/claim-ledger.md` §6.
+
+## Gate-3 additions (2026-07-14; evidence: `docs/gate3-adjudication.md`)
+
+| # | Risk | Status | Disposition / evidence |
+|---|------|--------|------------------------|
+| R14 | sglang declares an HF-hub kernel (`kernels-community/sgl-flash-attn3`) fetched at RUNTIME — violates the no-runtime-download posture | **MITIGATED (build design)** | serve-sglang PRE-BAKES the snapshot at build and the entrypoint seeds it into the mounted HF cache (no-clobber); residual: [tool.kernels] version→revision mapping reconciled at GPU gate (`/etc/sgl-kernel-bake.json`) |
+| R15 | sglang stable hard-pins a BETA (`flash-attn-4==4.0.0b15`) | **ACCEPTED (documented)** | Named directly in constraints + lock method `--prerelease=explicit` (scopes prerelease to exactly this pin); watch upstream churn |
+| R16 | TRT-LLM rc lane: `architectures[0]=Qwen3_5MoeForConditionalGeneration` has NO registered route even at rc20 (`*ForCausalLM` only; strict lookup raises) | **OPEN (moot under D8a)** | Blocks any future D8(b)-style rc experiment; re-check first in the R19 checklist |
+| R17 | trtllm wheels ≤rc19 use bare `linux_x86_64` tags — strict-manylinux resolvers reject them; pip-in-container accepts | **ACCEPTED (tooling note)** | Lock generation documented linux-only with explicit indexes; rc20+ moved to manylinux_2_28 |
+| R18 | NGC-container torch (custom 2.10.0a0 build) vs PyPI-wheel torch (2.9.1) are incompatible provisioning paths; plain-PyPI torch 2.9.1 is additionally cu12.8-lineage | **MITIGATED (build assert)** | serve-trtllm build asserts `torch==2.9.1+cu130` AND zero cu12-lineage packages; upstream mix warning quoted in gate3 §2 |
+| R19 | variant-d ships an engine that serves NONE of the three hosted models (D8a) — risk of the image being mistaken for a serving deployment | **OPEN (loudly labeled)** | Exclusions in image header, build log, `/etc/image-manifest.json`, README §1; re-activation checklist in `handoff/trtllm_smoke.md` (trigger: TRT-LLM stable gains Qwen3.5/3.6-multimodal or embedding serving) |
+| R20 | sglang sm90 GDN decode runs triton with FP32 SSM state (SM100 uses flashinfer/bf16) — numerics/perf vs vLLM unmeasured | **OPEN (GPU-gated)** | Bench + parity item at first sm90 session; noted in qwen36 profile headers |
+| R21 | sglang FP8-KV on BF16 targets has no scale-calibration flag (`--calculate-kv-scales` absent); scales default 1.0 with documented accuracy warning | **MITIGATED (posture)** | `sglang/qwen36-default.sh` ships WITHOUT fp8 KV; NVFP4 profile unaffected (checkpoint ships KV scales, code-verified load path); revisit via `--quantization-param-path` at GPU gate |
