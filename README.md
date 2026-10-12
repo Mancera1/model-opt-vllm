@@ -25,6 +25,8 @@ cycle** — all runtime behavior is code/doc-verified only; every serve profile 
 **BLOCKED-protocol** header and refuses to launch without a visible GPU rather than fabricate a
 run. No `:latest` tags anywhere; **no runtime pip** (all installs happen at build).
 
+<img width="786" height="305" alt="Screenshot 2026-10-12 at 2 02 17 AM" src="https://github.com/user-attachments/assets/1efc7bf9-12e9-4d87-af12-5ed520c80bef" />
+
 ---
 
 ## 1. Images at a glance
